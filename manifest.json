@@ -1,0 +1,16 @@
+{
+  "short_name": "jiřikovo POS",
+  "name": "jiřikovo POS Kávový Stánek",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#78350f",
+  "theme_color": "#78350f",
+  "display": "standalone",
+  "orientation": "portrait"
+}

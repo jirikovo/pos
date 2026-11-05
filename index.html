@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jiřikovo POS</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="jiřikovo POS">
+    <link rel="apple-touch-icon" href="https://flaticon.com">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f3f4f6;
+            user-select: none;
+        }
+        header {
+            background-color: #78350f;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-buttons button {
+            background: #b45309;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .header-buttons button:hover { background-color: #d97706; }
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        #menu {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-content: flex-start;
+            overflow-y: auto;
+        }
+        .btn-product {
+            background-color: #92400e;
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 140px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: left;
+        }
+        #sidebar {
+            width: 350px;
+            background: white;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+        }
+        .cart-header { padding: 15px; border-bottom: 1px solid #e5e7eb; margin: 0; font-size: 18px; }
+        #cart-items { flex: 1; padding: 15px; overflow-y: auto; }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafb;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .item-controls button {
+            background: #e5e7eb; border: none; width: 28px; height: 28px; 
+            border-radius: 50%; font-weight: bold; cursor: pointer;
+        }
+        #checkout { padding: 15px; background: #f9fafb; border-top: 1px solid #e5e7eb; }
+        .total-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .pay-buttons { display: flex; gap: 10px; }
+        .btn-pay { flex: 1; padding: 15px; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-cash { background-color: #16a34a; }
+        .btn-card { background-color: #2563eb; }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 16px; width: 450px; max-h: 80vh; overflow-y: auto;
+        }
+        .admin-item, .history-item {
+            padding: 10px 0; border-bottom: 1px solid #eee;
+        }
+        .history-item-header {
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold;
+        }
+        .history-item-detail {
+            display: none; background: #f9fafb; padding: 8px; margin-top: 5px; border-radius: 6px; font-size: 14px; color: #4b5563;
+        }
+        .admin-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .admin-item input.name-input { flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
+        .admin-item input.price-input { width: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
+        .add-form { margin-top: 20px; display: flex; gap: 8px; padding-top: 15px; border-top: 2px solid #eee; }
+        .add-form input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-delete { background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Platba uložena!</div>
+
+    <header>
+        <h1 style="margin:0; font-size: 20px;">☕ jiřikovo POS</h1>
+        <div class="header-buttons">
+            <button type="button" onclick="openAdmin()">⚙️ Upravit menu</button>
+            <button type="button" onclick="openHistory()">📊 Historie</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="menu"></section>
+
+        <section id="sidebar">
+            <h2 class="cart-header">Košík</h2>
+            <div id="cart-items"></div>
+            <div id="checkout">
+                <div class="total-row">
+                    <span>CELKEM:</span>
+                    <span id="total-price">0 Kč</span>
+                </div>
+                <div class="pay-buttons">
+                    <button type="button" class="btn-pay btn-cash" onclick="pay('HOTOVOST')">HOTOVOST</button>
+                    <button type="button" class="btn-pay btn-card" onclick="pay('KARTA')">KARTA</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Admin Products -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">⚙️ Správa produktů</h3>
+            <div id="admin-list"></div>
+            
+            <div class="add-form">
+                <input type="text" id="new-name" placeholder="Nový název" style="flex:1;">
+                <input type="number" id="new-price" placeholder="Cena" style="width:70px;">
+                <button type="button" onclick="addProduct()" style="background:#16a34a; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">+</button>
+            </div>
+            
+            <button type="button" onclick="closeAdmin()" style="margin-top:20px; width:100%; padding:12px; background:#374151; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:15px;">Uložit a zavřít</button>
+        </div>
+    </div>
+
+    <!-- MODAL: History -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; display:flex; justify-content:between;">
+                <span>📊 Přehled transakcí</span>
+                <span id="history-total-sum" style="float:right; color:#16a34a;">Celkem: 0 Kč</span>
+            </h3>
+            <div id="history-list" style="margin-top:15px; max-h:45vh; overflow-y:auto;"></div>
+            
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="button" onclick="clearHistory()" style="flex:1; padding:12px; background:#fee2e2; color:#dc2626; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Smazat historii</button>
+                <button type="button" onclick="closeHistory()" style="flex:1; padding:12px; background:#374151; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Zavřít</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultProducts = [
+            { name: 'Espresso', price: 50 },
+            { name: 'Lungo', price: 55 },
+            { name: 'Cappuccino', price: 70 },
+            { name: 'Flat White', price: 85 },
+            { name: 'Batch Brew', price: 60 },
+            { name: 'Croissant', price: 45 }
+        ];
+
+        let products = defaultProducts;
+        let historyLog = [];
+        let cart = [];
+
+        try {
+            if (localStorage.getItem('jirik_products')) {
+                products = JSON.parse(localStorage.getItem('jirik_products'));
+            }
+            if (localStorage.getItem('jirik_history')) {
+                historyLog = JSON.parse(localStorage.getItem('jirik_history'));
+            }
+        } catch (e) {
+            console.log("Storage restricted locally. Running in volatile memory.");
+        }
+
+        function saveProducts() { try { localStorage.setItem('jirik_products', JSON.stringify(products)); } catch(e) {} }
+        function saveHistory() { try { localStorage.setItem('jirik_history', JSON.stringify(historyLog)); } catch(e) {} }
+
+        function renderMenu() {
+            const container = document.getElementById('menu');
+            container.innerHTML = '';
+            products.forEach((p, index) => {
+                container.innerHTML += `
+                    <button type="button" class="btn-product" onclick="addToCart(${index})">
+                        <span>${p.name}</span>
+                        <span>${p.price} Kč</span>
+                    </button>
+                `;
+            });
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const totalContainer = document.getElementById('total-price');
+            
+            if (cart.length === 0) {
